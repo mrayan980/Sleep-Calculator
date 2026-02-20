@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💤 Sleep Calculator</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+  background:linear-gradient(135deg, #1a1438 0%, #0f0c29 100%);
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  color:#e8e4f3; padding:20px; overflow-x:hidden;
+}
+.stars { position:fixed; inset:0; pointer-events:none; z-index:0; }
+.star { position:absolute; width:2px; height:2px; background:#fff; border-radius:50%; opacity:0.6;
+  animation:twinkle 3s infinite ease-in-out; }
+@keyframes twinkle { 0%,100%{opacity:0.6} 50%{opacity:1} }
+.container { max-width:650px; width:100%; background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(20px); border-radius:24px; border:1px solid rgba(255,255,255,0.1);
+  box-shadow:0 20px 60px rgba(0,0,0,0.5); padding:40px; position:relative; z-index:1; }
+.header { text-align:center; margin-bottom:40px; }
+.header h1 { font-size:2.5rem; margin-bottom:8px; background:linear-gradient(135deg,#a78bfa,#fbbf24);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.header p { color:#9d97b8; font-size:0.95rem; }
+.mode-selector { display:flex; gap:12px; margin-bottom:32px; }
+.mode-btn { flex:1; background:rgba(255,255,255,0.05); border:2px solid rgba(255,255,255,0.1);
+  border-radius:12px; padding:20px 16px; cursor:pointer; transition:all 0.3s; text-align:center; }
+.mode-btn:hover { background:rgba(167,139,250,0.15); border-color:rgba(167,139,250,0.4);
+  transform:translateY(-2px); }
+.mode-btn.active { background:rgba(167,139,250,0.25); border-color:#a78bfa; }
+.mode-btn .icon { font-size:2rem; margin-bottom:8px; }
+.mode-btn .label { font-size:0.9rem; font-weight:500; color:#e8e4f3; }
+.input-section { background:rgba(255,255,255,0.05); border-radius:16px; padding:24px; margin-bottom:32px;
+  border:1px solid rgba(255,255,255,0.1); }
+.input-label { font-size:1.1rem; margin-bottom:16px; text-align:center; color:#e8e4f3; }
+.time-picker { display:flex; gap:8px; align-items:center; justify-content:center; }
+.time-input { background:rgba(255,255,255,0.1); border:2px solid rgba(255,255,255,0.2);
+  border-radius:12px; padding:16px; font-size:2rem; color:#e8e4f3; width:90px; text-align:center;
+  outline:none; transition:all 0.3s; }
+.time-input:focus { border-color:#a78bfa; background:rgba(167,139,250,0.15); }
+/* Make number input arrows visible */
+.time-input::-webkit-inner-spin-button, .time-input::-webkit-outer-spin-button {
+  opacity:1; cursor:pointer; height:40px; }
+input[type="number"] { appearance: unset;-moz-appearance:textfield; }
+input[type="number"]::-webkit-inner-spin-button { filter:invert(1); }
+.time-sep { font-size:2rem; color:#9d97b8; }
+.ampm-btn { background:rgba(255,255,255,0.1); border:2px solid rgba(255,255,255,0.2);
+  border-radius:12px; padding:16px 24px; font-size:1.2rem; color:#e8e4f3; cursor:pointer;
+  transition:all 0.3s; }
+.ampm-btn:hover,.ampm-btn.active { background:rgba(167,139,250,0.25); border-color:#a78bfa; }
+.sleep-now-btn { margin-top:16px; width:100%; background:rgba(167,139,250,0.2); border:2px solid #a78bfa;
+  border-radius:12px; padding:14px; color:#e8e4f3; font-size:1rem; cursor:pointer; transition:all 0.3s;
+  font-weight:500; }
+.sleep-now-btn:hover { background:rgba(167,139,250,0.35); transform:scale(1.02); }
+.results { display:none; }
+.results.show { display:block; }
+.results-title { font-size:1.3rem; margin-bottom:20px; display:flex; align-items:center; gap:8px; }
+.result-item { background:rgba(255,255,255,0.05); border:2px solid rgba(255,255,255,0.1);
+  border-radius:12px; padding:16px 20px; margin-bottom:12px; transition:all 0.3s; }
+.result-item:hover { background:rgba(255,255,255,0.08); transform:translateX(4px); }
+.result-item.recommended { background:rgba(251,191,36,0.1); border-color:#fbbf24; }
+.result-time { font-size:1.8rem; font-weight:600; margin-bottom:4px; display:flex; align-items:center; gap:8px; }
+.result-star { font-size:1.4rem; line-height:1; flex-shrink:0; }
+.result-details { color:#9d97b8; font-size:0.9rem; }
+.result-details .badge { display:inline-block; background:rgba(167,139,250,0.3); padding:2px 8px;
+  border-radius:6px; font-size:0.75rem; margin-left:8px; color:#a78bfa; font-weight:500; }
+.result-details .rec-badge { background:rgba(251,191,36,0.3); color:#fbbf24; }
+.nap-options { display:none; gap:16px; }
+.nap-options.show { display:flex; }
+.nap-card { flex:1; background:rgba(255,255,255,0.05); border:2px solid rgba(255,255,255,0.1);
+  border-radius:16px; padding:28px; text-align:center; cursor:pointer; transition:all 0.3s; }
+.nap-card:hover { background:rgba(167,139,250,0.15); border-color:#a78bfa; transform:translateY(-4px); }
+.nap-card .icon { font-size:3rem; margin-bottom:12px; }
+.nap-card .duration { font-size:2rem; font-weight:600; margin-bottom:8px; }
+.nap-card .desc { color:#9d97b8; font-size:0.85rem; margin-bottom:16px; }
+.nap-card .start-btn { background:#a78bfa; border:none; border-radius:10px; padding:12px 24px;
+  color:#fff; font-size:0.9rem; font-weight:500; cursor:pointer; transition:all 0.3s; }
+.nap-card .start-btn:hover { background:#8b5cf6; transform:scale(1.05); }
+.timer-view { display:none; text-align:center; padding:40px 20px; }
+.timer-view.show { display:block; }
+.timer-display { font-size:5rem; font-weight:700; margin:30px 0; color:#a78bfa; }
+.timer-label { font-size:1.2rem; color:#9d97b8; margin-bottom:30px; }
+.timer-done { font-size:2rem; margin-bottom:20px; }
+.back-btn { background:rgba(255,255,255,0.1); border:2px solid rgba(255,255,255,0.2);
+  border-radius:10px; padding:10px 20px; color:#e8e4f3; cursor:pointer; font-size:0.9rem;
+  transition:all 0.3s; }
+.back-btn:hover { background:rgba(255,255,255,0.15); border-color:#a78bfa; }
+.info-footer { margin-top:32px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1);
+  text-align:center; color:#9d97b8; font-size:0.85rem; line-height:1.6; }
+@media(max-width:600px){
+  .container{padding:24px} .header h1{font-size:2rem} .mode-selector{flex-direction:column}
+  .time-input{width:70px;font-size:1.5rem} .nap-options{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="container">
+  <div class="header">
+    <h1>💤 Sleep Calculator</h1>
+    <p>Calculate your perfect sleep times based on 90-minute cycles</p>
+  </div>
+
+  <div class="mode-selector">
+    <div class="mode-btn active" onclick="setMode('sleep')" id="modeSleep">
+      <div class="icon">🛏️</div>
+      <div class="label">When to Sleep</div>
+    </div>
+    <div class="mode-btn" onclick="setMode('wake')" id="modeWake">
+      <div class="icon">⏰</div>
+      <div class="label">When to Wake</div>
+    </div>
+    <div class="mode-btn" onclick="setMode('nap')" id="modeNap">
+      <div class="icon">☕</div>
+      <div class="label">Power Nap</div>
+    </div>
+  </div>
+
+  <div id="sleepSection" class="input-section">
+    <div class="input-label">I want to wake up at:</div>
+    <div class="time-picker">
+      <input type="number" class="time-input" id="wakeHour" min="1" max="12" value="7">
+      <span class="time-sep">:</span>
+      <input type="number" class="time-input" id="wakeMin" min="0" max="59" value="00">
+      <button class="ampm-btn active" id="wakeAMPM" onclick="toggleAMPM('wake')">AM</button>
+    </div>
+    <button class="sleep-now-btn" onclick="calculate('sleep')" style="margin-top:20px">Calculate Bedtimes</button>
+  </div>
+
+  <div id="wakeSection" class="input-section" style="display:none">
+    <div class="input-label">I'm going to bed at:</div>
+    <div class="time-picker">
+      <input type="number" class="time-input" id="sleepHour" min="1" max="12" value="11">
+      <span class="time-sep">:</span>
+      <input type="number" class="time-input" id="sleepMin" min="0" max="59" value="00">
+      <button class="ampm-btn" id="sleepAMPM" onclick="toggleAMPM('sleep')">PM</button>
+    </div>
+    <button class="sleep-now-btn" onclick="sleepNow()">😴 Going to Bed Now</button>
+    <button class="sleep-now-btn" onclick="calculate('wake')" style="margin-top:12px">Calculate Wake Times</button>
+  </div>
+
+  <div id="napSection" class="nap-options">
+    <div class="nap-card" onclick="startNap(20)">
+      <div class="icon">☕</div>
+      <div class="duration">20 minutes</div>
+      <div class="desc">Quick energy boost<br>No deep sleep</div>
+      <button class="start-btn">Start Timer</button>
+    </div>
+    <div class="nap-card" onclick="startNap(90)">
+      <div class="icon">😴</div>
+      <div class="duration">90 minutes</div>
+      <div class="desc">Full sleep cycle<br>Wake refreshed</div>
+      <button class="start-btn">Start Timer</button>
+    </div>
+  </div>
+
+  <div id="results" class="results"></div>
+
+  <div id="timerView" class="timer-view">
+    <div id="timerContent"></div>
+  </div>
+
+  <div class="info-footer">
+    ℹ️ Assumes 15 minutes to fall asleep<br>
+    Each sleep cycle ≈ 90 minutes
+  </div>
+</div>
+
+<script>
+let currentMode = 'sleep';
+let timerInterval = null;
+
+// Generate stars
+const starsDiv = document.getElementById('stars');
+for(let i=0; i<80; i++){
+  const star = document.createElement('div');
+  star.className='star';
+  star.style.left=Math.random()*100+'%';
+  star.style.top=Math.random()*100+'%';
+  star.style.animationDelay=Math.random()*3+'s';
+  starsDiv.appendChild(star);
+}
+
+function setMode(mode){
+  currentMode=mode;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('mode'+mode.charAt(0).toUpperCase()+mode.slice(1)).classList.add('active');
+  document.getElementById('sleepSection').style.display=mode==='sleep'?'block':'none';
+  document.getElementById('wakeSection').style.display=mode==='wake'?'block':'none';
+  document.getElementById('napSection').classList.toggle('show',mode==='nap');
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('timerView').classList.remove('show');
+}
+
+function toggleAMPM(type){
+  const btn=document.getElementById(type+'AMPM');
+  btn.textContent=btn.textContent==='AM'?'PM':'AM';
+  btn.classList.toggle('active');
+}
+
+function sleepNow(){
+  const now=new Date();
+  let h=now.getHours();
+  const m=now.getMinutes();
+  const ampm=h>=12?'PM':'AM';
+  h=h%12||12;
+  document.getElementById('sleepHour').value=h;
+  document.getElementById('sleepMin').value=String(m).padStart(2,'0');
+  const btn=document.getElementById('sleepAMPM');
+  btn.textContent=ampm;
+  btn.classList.toggle('active',ampm==='AM');
+  calculate('wake');
+}
+
+function calculate(mode){
+  let baseTime;
+  if(mode==='sleep'){
+    const h=parseInt(document.getElementById('wakeHour').value)||7;
+    const m=parseInt(document.getElementById('wakeMin').value)||0;
+    const ampm=document.getElementById('wakeAMPM').textContent;
+    baseTime=toMinutes(h,m,ampm);
+  }else{
+    const h=parseInt(document.getElementById('sleepHour').value)||11;
+    const m=parseInt(document.getElementById('sleepMin').value)||0;
+    const ampm=document.getElementById('sleepAMPM').textContent;
+    baseTime=toMinutes(h,m,ampm);
+  }
+
+  const results=[];
+  const cycles=[5,6,4,7,3];
+  cycles.forEach(c=>{
+    const total=c*90+15;
+    let time;
+    if(mode==='sleep') time=baseTime-total;
+    else time=baseTime+total;
+    if(time<0)time+=1440;
+    if(time>=1440)time-=1440;
+    const hours=c*1.5;
+    results.push({
+      time:formatTime(time),
+      cycles:c,
+      hours:formatHours(hours),
+      recommended:c===5||c===6
+    });
+  });
+
+  displayResults(results,mode);
+}
+
+function toMinutes(h,m,ampm){
+  let hours=h;
+  if(ampm==='PM'&&h!==12)hours+=12;
+  if(ampm==='AM'&&h===12)hours=0;
+  return hours*60+m;
+}
+
+function formatTime(mins){
+  let h=Math.floor(mins/60);
+  let m=mins%60;
+  const ampm=h>=12?'PM':'AM';
+  h=h%12||12;
+  return h+':'+(m<10?'0':'')+m+' '+ampm;
+}
+
+function formatHours(h){
+  const hours=Math.floor(h);
+  const mins=Math.round((h-hours)*60);
+  return hours+'h '+(mins<10?'0':'')+mins+'m';
+}
+
+function displayResults(results,mode){
+  const div=document.getElementById('results');
+  const title=mode==='sleep'?'💡 Your Best Bedtimes:':'⏰ Your Best Wake Times:';
+  let html='<div class="results-title">'+title+'</div>';
+  results.forEach(r=>{
+    const star=r.recommended?'<span class="result-star">⭐</span>':'';
+    const rec=r.recommended?'<span class="rec-badge">RECOMMENDED</span>':'';
+    html+=`<div class="result-item ${r.recommended?'recommended':''}">
+      <div class="result-time">${star} ${r.time}</div>
+      <div class="result-details">${r.cycles} sleep cycle${r.cycles>1?'s':''} (${r.hours}) ${rec}</div>
+    </div>`;
+  });
+  div.innerHTML=html;
+  div.classList.add('show');
+  // Smooth scroll to results
+  setTimeout(()=>div.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
+}
+
+function startNap(mins){
+  document.getElementById('napSection').style.display='none';
+  document.getElementById('results').classList.remove('show');
+  const tv=document.getElementById('timerView');
+  tv.classList.add('show');
+  
+  let remaining=mins*60;
+  const tc=document.getElementById('timerContent');
+  
+  function updateTimer(){
+    if(remaining<=0){
+      clearInterval(timerInterval);
+      tc.innerHTML=`
+        <div class="timer-done">⏰ Time to Wake Up!</div>
+        <div class="timer-label">Your ${mins}-minute nap is complete</div>
+        <button class="back-btn" onclick="backToNap()">Back</button>
+      `;
+      if('Notification' in window && Notification.permission==='granted'){
+        new Notification('💤 Sleep Calculator',{body:'Time to wake up!',icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="75" font-size="75">⏰</text></svg>'});
+      }
+      return;
+    }
+    const m=Math.floor(remaining/60);
+    const s=remaining%60;
+    tc.innerHTML=`
+      <div class="timer-label">${mins===20?'☕ Power Nap':'😴 Full Cycle Nap'}</div>
+      <div class="timer-display">${m}:${s<10?'0':''}${s}</div>
+      <button class="back-btn" onclick="stopNap()">Cancel</button>
+    `;
+    remaining--;
+  }
+  
+  updateTimer();
+  timerInterval=setInterval(updateTimer,1000);
+  
+  if('Notification' in window && Notification.permission==='default'){
+    Notification.requestPermission();
+  }
+}
+
+function stopNap(){
+  clearInterval(timerInterval);
+  backToNap();
+}
+
+function backToNap(){
+  document.getElementById('timerView').classList.remove('show');
+  setMode('nap');
+}
+
+// Auto-format time inputs
+['wakeHour','wakeMin','sleepHour','sleepMin'].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener('input',()=>{
+    let val=parseInt(el.value)||0;
+    const isHour=id.includes('Hour');
+    if(isHour)val=Math.max(1,Math.min(12,val));
+    else val=Math.max(0,Math.min(59,val));
+    el.value=val;
+  });
+  el.addEventListener('blur',()=>{
+    if(id.includes('Min'))el.value=String(el.value).padStart(2,'0');
+  });
+});
+</script>
+</body>
+</html>
